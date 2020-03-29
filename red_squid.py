@@ -60,18 +60,18 @@ def main():
                         if 'Conflicts' in __json['message']:
                             for conflict in __json['message']['Conflicts']:
                                 if conflict['WarType'] == 'civilwar' or conflict['WarType'] == 'war':
-                                    message = 'WAR! in  ' + star_system + ': ' + conflict['Faction1']['Name'] + '['+ str(conflict['Faction1']['WonDays']) + '] vs. ' + conflict['Faction2']['Name'] + '[' + str(conflict['Faction2']['WonDays']) +']! '
+                                    message = 'WAR! in ' + star_system + ': ' + conflict['Faction1']['Name'] + '['+ str(conflict['Faction1']['WonDays']) + '] vs. ' + conflict['Faction2']['Name'] + '[' + str(conflict['Faction2']['WonDays']) +']! '
                                     myobj = {'content': message}
                                     x = requests.post(redsquid_url, data=myobj)
                                     print(f'{timestamp}: {message}, ({x})')
-                time.sleep(1)
                 sys.stdout.flush()
-                
+
         except zmq.ZMQError as e:
             print ('ZMQSocketException: ' + str(e))
             sys.stdout.flush()
             subscriber.disconnect(__relayEDDN)
             time.sleep(5)
+        time.sleep(.2)
  
 if __name__ == '__main__':
     main()
