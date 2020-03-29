@@ -1,76 +1,37 @@
 #!/home/robotnik/opt/python-3.8.1/bin/python3
 
-import zlib
-import zmq
-import simplejson
-import sys
-import time
-import math
 import requests
-#statics is where I put my tokens.
-from statics import redsquid_url
+# statics is where I put my tokens.
+from statics import redsquid_url, shitlist_sectors, brolist, shitlist, hometeam
+from datetime import date, time, datetime
 
-"""
- "  Configuration
-"""
-__relayEDDN             = 'tcp://eddn.edcd.io:9500'
-__timeoutEDDN           = 600000
+#code begins
 
-"""
- "  Start
-"""
-
-def distance_finder(input_coords):
-    colonia_coords = [-9530.5, -910.28125, 19808.125]
-    ogmar_coords = [-9534, -905.28125, 19802.03125]
-    colonia_dist = math.sqrt(((colonia_coords[0] - (input_coords[0])) ** 2) + ((colonia_coords[1] - (input_coords[1])) ** 2) + ((colonia_coords[2] - (input_coords[2]))**2))
-    ogmar_dist = math.sqrt(((ogmar_coords[0] - (input_coords[0]))**2) + ((ogmar_coords[1] - (input_coords[1]))**2) + ((ogmar_coords[2] - input_coords[2])**2))
-    output = [colonia_dist, ogmar_dist]
-    return output
-
-def main():
-    context     = zmq.Context()
-    subscriber  = context.socket(zmq.SUB)
-    
-    subscriber.setsockopt(zmq.SUBSCRIBE, b"")
-    subscriber.setsockopt(zmq.RCVTIMEO, __timeoutEDDN)
-
-    while True:
-        try:
-            subscriber.connect(__relayEDDN)
-            
-            while True:
-                __message   = subscriber.recv()
-                
-                if __message == False:
-                    subscriber.disconnect(__relayEDDN)
-                    break
-                
-                __message   = zlib.decompress(__message)
-                __json      = simplejson.loads(__message)
-                
-                # call dumps() to ensure double quotes in output
-                #pp.pprint(__json)
-                if 'Factions' in __json['message']:
-                    star_system = __json['message']['StarSystem']
-                    star_pos = __json['message']['StarPos']
-                    timestamp = __json['header']['gatewayTimestamp']
-                    distances = distance_finder(star_pos)
-                    if distances[0] < 2001:
-                        if 'Conflicts' in __json['message']:
-                            for conflict in __json['message']['Conflicts']:
-                                if conflict['WarType'] == 'civilwar' or conflict['WarType'] == 'war':
-                                    message = 'WAR! in ' + star_system + ': ' + conflict['Faction1']['Name'] + '['+ str(conflict['Faction1']['WonDays']) + '] vs. ' + conflict['Faction2']['Name'] + '[' + str(conflict['Faction2']['WonDays']) +']! '
-                                    myobj = {'content': message}
-                                    x = requests.post(redsquid_url, data=myobj)
-                                    print(f'{timestamp}: {message}, ({x})')
-                sys.stdout.flush()
-        except zmq.ZMQError as e:
-            print ('ZMQSocketException: ' + str(e))
-            sys.stdout.flush()
-            subscriber.disconnect(__relayEDDN)
-            time.sleep(5)
-        time.sleep(.1)
- 
-if __name__ == '__main__':
-    main()
+def red_squid(conflicts,star_system):
+    for conflict in conflicts:
+        if conflict['WarType'] == 'civilwar' or conflict['WarType'] == 'war':
+            faction1 = conflict['Faction1']['Name']
+            faction2 = conflict['Faction2']['Name']
+            f1score = str(conflict['Faction1']['WonDays'])
+            f2score = str(conflict['Faction2']['WonDays'])
+            wartype = conflict['WarType'].upper()
+            message = f'**{wartype}** in {star_system}: {faction1}[{f1score}] vs. {faction2}[{f2score}]! '
+            if faction1 == hometeam or faction2 == hometeam:
+                message = message + f'\n Support **{hometeam}**!'
+            elif faction1 in shitlist and faction2 in shitlist:
+                message = message + f'\n **BRING SUFFERING TO ALL SIDES!**'
+            elif faction1 in brolist and faction2 in brolist:
+                message = message + f'\n These factions are both pals.  Stay out of it maybe?'
+            elif faction1 in shitlist:
+                message = message + f'\n BRING ME THE SOULS OF {faction1.upper()}'
+            elif faction2 in shitlist:
+                message = message + f'\n I TREASURE THE AGONY OF {faction2.upper()}'
+            elif faction1 in brolist:
+                message = message + f"\n I WANT TO TASTE {faction2.upper()}'S BONES!"
+            elif faction2 in brolist:
+                message = message + f'\n I DESIRE THE WAILING OF {faction1.upper()}'
+            if star_system in shitlist_sectors:
+                message = message + f'\n {star_system} is a designated hellsector, always fight against the controller!'
+            myobj = {'content': message}
+            x = requests.post(redsquid_url, data=myobj)
+            print(f'REDSQUID {datetime.now()}: {message}, ({x})')
