@@ -65,7 +65,7 @@ def main():
             sys.stdout.flush()
             subscriber.disconnect(__relayEDDN)
             time.sleep(5)
-        time.sleep(.2)
+        time.sleep(.1)
 
 if __name__ == '__main__':
     main()

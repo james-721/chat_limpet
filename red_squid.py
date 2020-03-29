@@ -65,13 +65,12 @@ def main():
                                     x = requests.post(redsquid_url, data=myobj)
                                     print(f'{timestamp}: {message}, ({x})')
                 sys.stdout.flush()
-
         except zmq.ZMQError as e:
             print ('ZMQSocketException: ' + str(e))
             sys.stdout.flush()
             subscriber.disconnect(__relayEDDN)
             time.sleep(5)
-        time.sleep(.2)
+        time.sleep(.1)
  
 if __name__ == '__main__':
     main()
