@@ -48,7 +48,7 @@ while True:
                     if 'Conflicts' in __json['message']:
                         if todays_wars[0] != str(date.today()):
                             todays_wars.clear()
-                            todays_wars = [date.today()]
+                            todays_wars = [str(date.today())]
                             print(f'COLLECTOR {datetime.now()}: Clearing todays war list, updating date.')
                         if star_system not in todays_wars:
                             try:
