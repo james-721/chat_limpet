@@ -10,7 +10,7 @@ from red_squid import red_squid
 from statics import colonia_coords
 from common_functions import distance_finder
 
-#Config
+# Config
 __relayEDDN = 'tcp://eddn.edcd.io:9500'
 __timeoutEDDN = 600000
 context = zmq.Context()
@@ -18,8 +18,9 @@ subscriber = context.socket(zmq.SUB)
 subscriber.setsockopt(zmq.SUBSCRIBE, b"")
 subscriber.setsockopt(zmq.RCVTIMEO, __timeoutEDDN)
 today = date.today()
+todays_wars = [str(today)]
 
-#code begins
+# code begins
 print(f'COLLECTOR {datetime.now()} Collector Limpet Startup successful - {today}')
 
 while True:
@@ -41,14 +42,22 @@ while True:
                 star_pos = __json['message']['StarPos']
                 timestamp = __json['header']['gatewayTimestamp']
                 distance = distance_finder(colonia_coords, star_pos)
-                #print(f'COLLECTOR {datetime.now()}: {star_system}, {distance}')
+                # print(f'COLLECTOR {datetime.now()}: {star_system}, {distance}')
                 if distance < 2001:
                     print(f'COLLECTOR {datetime.now()}: {star_system}, {distance}')
                     if 'Conflicts' in __json['message']:
-                        try:
-                            red_squid(__json['message']['Conflicts'], star_system)
-                        except:
-                            print(f'COLLECTOR {datetime.now()}: ERROR from red_squid.')
+                        if todays_wars[0] != str(date.today()):
+                            todays_wars.clear()
+                            todays_wars = [date.today()]
+                            print(f'COLLECTOR {datetime.now()}: Clearing todays war list, updating date.')
+                        if star_system not in todays_wars:
+                            try:
+                                red_squid(__json['message']['Conflicts'], star_system)
+                                todays_wars.append(star_system)
+                            except:
+                                print(f'COLLECTOR {datetime.now()}: ERROR from red_squid.')
+                        else:
+                            print(f'COLLECTOR {datetime.now()}: {star_system} - already reported.')
             sys.stdout.flush()
     except zmq.ZMQError as e:
         print('ZMQSocketException: ' + str(e))

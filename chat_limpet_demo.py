@@ -13,7 +13,7 @@ class MyClient(discord.Client):
         if message.author.id == self.user.id:
             return
 
-        if message.content.startswith('!hello'):
+        if message.content.startswith('~hello'):
             await message.channel.send('Hello {0.author.mention}'.format(message))
 
 client = MyClient()
